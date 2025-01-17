@@ -18,16 +18,12 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	cachev1alpha1 "github.com/PoolPooer/p2code-scheduler/api/v1alpha1"
 )
@@ -37,61 +33,26 @@ type P2codeSchedulerReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// Reconcile reconciles a P2codeScheduler object
-func (r *P2codeSchedulerReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	// TODO(user): Add your reconciliation logic here
-	return reconcile.Result{}, nil
+// Reconcile watches P2codeScheduler resources and reacts when they are created or updated
+func (r *P2codeSchedulerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+
+	// Fetch the P2codeScheduler resource
+	var scheduler cachev1alpha1.P2codeScheduler
+	if err := r.Get(ctx, req.NamespacedName, &scheduler); err != nil {
+		logger.Error(err, "unable to fetch P2codeScheduler")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// Log a simple "Hello World" message
+	fmt.Println("Hello World: Detected P2codeScheduler resource", "name", scheduler.Name)
+
+	return ctrl.Result{}, nil
 }
 
-var _ = Describe("P2codeScheduler Controller", func() {
-	Context("When reconciling a resource", func() {
-		const resourceName = "test-resource"
-
-		ctx := context.Background()
-
-		typeNamespacedName := types.NamespacedName{
-			Name:      resourceName,
-			Namespace: "default", // TODO(user):Modify as needed
-		}
-		p2codescheduler := &cachev1alpha1.P2codeScheduler{}
-
-		BeforeEach(func() {
-			By("creating the custom resource for the Kind P2codeScheduler")
-			err := k8sClient.Get(ctx, typeNamespacedName, p2codescheduler)
-			if err != nil && errors.IsNotFound(err) {
-				resource := &cachev1alpha1.P2codeScheduler{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      resourceName,
-						Namespace: "default",
-					},
-					// TODO(user): Specify other spec details if needed.
-				}
-				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
-			}
-		})
-
-		AfterEach(func() {
-			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &cachev1alpha1.P2codeScheduler{}
-			err := k8sClient.Get(ctx, typeNamespacedName, resource)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Cleanup the specific resource instance P2codeScheduler")
-			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
-		})
-		It("should successfully reconcile the resource", func() {
-			By("Reconciling the created resource")
-			controllerReconciler := &P2codeSchedulerReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
-			}
-
-			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespacedName,
-			})
-			Expect(err).NotTo(HaveOccurred())
-			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
-			// Example: If you expect a certain status condition after reconciliation, verify it here.
-		})
-	})
-})
+// SetupWithManager sets up the controller with the Manager.
+func (r *P2codeSchedulerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&cachev1alpha1.P2codeScheduler{}).
+		Complete(r)
+}

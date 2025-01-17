@@ -1,0 +1,36 @@
+apiVersion: apiextensions.k8s.io/v1aplha1
+kind: P2codeScheduler
+metadata:
+  name: p2codescheduler-sample
+  annotations:
+      p2code.rank.rer: ""
+      p2code.rank.gpu: ""
+      p2code.rank.security: ""
+      p2code.filter.platform: ""
+      p2code.filter.location: ""
+      p2code.filter.deviceCat: ""
+      p2code.filter.edgeDevice: ""
+spec:
+    manifests:
+      - apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          namespace: default
+          name: nginx-deployment
+        data:
+          key: value
+        spec:
+          replicas: 3
+          selector:
+            matchLabels:
+              app: nginx
+          template:
+            metadata:
+              labels:
+                app: sample
+            spec:
+              containers:
+                - name: sample-container
+                  image: nginx:latest
+                  ports:
+                    - containerPort: 80
